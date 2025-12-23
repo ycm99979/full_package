@@ -1,0 +1,19 @@
+# IMU Sensor Configuration
+# BNO055 or similar IMU sensor parameters
+
+imu_sensor:
+  ros__parameters:
+    frame_id: "imu_link"
+    
+    # Publishing rate (Hz)
+    publish_rate: 100.0
+    
+    # Covariance values (diagonal)
+    # orientation_covariance: [x, y, z] - typically in rad^2
+    orientation_covariance_diagonal: [0.0025, 0.0025, 0.0025]
+    
+    # angular_velocity_covariance: [x, y, z] - typically in (rad/s)^2
+    angular_velocity_covariance_diagonal: [0.02, 0.02, 0.02]
+    
+    # linear_acceleration_covariance: [x, y, z] - typically in (m/s^2)^2
+    linear_acceleration_covariance_diagonal: [0.04, 0.04, 0.04]

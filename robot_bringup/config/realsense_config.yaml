@@ -1,0 +1,47 @@
+# Intel RealSense D405/D435 Camera Configuration
+
+realsense_camera:
+  ros__parameters:
+    # Serial number (empty means use first device found)
+    serial_no: ''
+    
+    # Camera name and frame IDs
+    camera_name: "camera"
+    base_frame_id: "camera_link"
+    depth_frame_id: "camera_depth_frame"
+    color_frame_id: "camera_color_frame"
+    
+    # Enable streams
+    enable_depth: true
+    enable_color: true
+    enable_infra1: false
+    enable_infra2: false
+    enable_gyro: false
+    enable_accel: false
+    
+    # Depth stream configuration
+    depth_width: 640
+    depth_height: 480
+    depth_fps: 30
+    
+    # Color stream configuration
+    color_width: 640
+    color_height: 480
+    color_fps: 30
+    
+    # Point cloud
+    pointcloud.enable: true
+    pointcloud.stream_filter: 2  # 0=Any, 1=Color, 2=Depth
+    pointcloud.stream_index_filter: 0
+    
+    # Align depth to color
+    align_depth.enable: true
+    
+    # Spatial filter (reduce noise)
+    spatial_filter.enable: true
+    
+    # Temporal filter (reduce temporal noise)
+    temporal_filter.enable: true
+    
+    # Decimation filter (reduce resolution for performance)
+    decimation_filter.enable: false

@@ -1,0 +1,23 @@
+# Velodyne LiDAR Configuration
+# VLP-16 or similar 3D LiDAR parameters
+
+velodyne:
+  ros__parameters:
+    frame_id: "velodyne"
+    
+    # Device configuration
+    device_ip: "192.168.1.201"
+    port: 2368
+    
+    # Velodyne model (VLP16, VLP32C, VLS128)
+    model: "VLP16"
+    
+    # RPM (Rotations Per Minute)
+    rpm: 600.0
+    
+    # Point cloud configuration
+    min_range: 0.4  # meters
+    max_range: 100.0  # meters
+    
+    # Timestamp sync
+    time_offset: 0.0
