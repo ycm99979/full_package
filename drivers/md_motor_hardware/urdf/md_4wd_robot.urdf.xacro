@@ -1,0 +1,256 @@
+<?xml version="1.0"?>
+<!-- ============================================================================
+     MD Motor 4WD Robot URDF
+     ============================================================================
+     
+     4륜 스키드 스티어 로봇 URDF
+     - 4개의 개별 휠 조인트 정의
+     - ros2_control 통합
+     - 휠 순서: FL(Front Left), FR(Front Right), RL(Rear Left), RR(Rear Right)
+     
+     파라미터는 launch 파일에서 YAML을 통해 전달됩니다.
+     config/md_4wd_hardware.yaml 파일을 수정하여 설정을 변경하세요.
+     
+     ============================================================================ -->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="md_4wd_robot">
+
+  <!-- ========================================================================
+       Arguments (YAML에서 전달받는 파라미터)
+       ======================================================================== -->
+  <!-- 시리얼 통신 -->
+  <xacro:arg name="port" default="/dev/ttyMotor"/>
+  <xacro:arg name="baudrate" default="57600"/>
+  
+  <!-- 모터 드라이버 ID -->
+  <xacro:arg name="front_driver_id" default="1"/>
+  <xacro:arg name="rear_driver_id" default="2"/>
+  <xacro:arg name="id_mdui" default="184"/>
+  <xacro:arg name="id_mdt" default="183"/>
+  
+  <!-- 로봇 기구학 -->
+  <xacro:arg name="wheel_radius" default="0.05"/>
+  <xacro:arg name="wheel_separation" default="0.3"/>
+  <xacro:arg name="wheelbase" default="0.3"/>
+  
+  <!-- 모터/엔코더 -->
+  <xacro:arg name="gear_ratio" default="15"/>
+  <xacro:arg name="poles" default="10"/>
+  
+  <!-- ========================================================================
+       Properties (계산용 변수)
+       ======================================================================== -->
+  <xacro:property name="wheel_radius" value="$(arg wheel_radius)"/>
+  <xacro:property name="wheel_separation" value="$(arg wheel_separation)"/>
+  <xacro:property name="wheelbase" value="$(arg wheelbase)"/>
+  <xacro:property name="wheel_width" value="0.04"/>
+  
+  <!-- ========================================================================
+       Materials (재질 정의)
+       ======================================================================== -->
+  <material name="blue">
+    <color rgba="0.0 0.0 0.8 1.0"/>
+  </material>
+  
+  <material name="gray">
+    <color rgba="0.5 0.5 0.5 1.0"/>
+  </material>
+  
+  <material name="dark_gray">
+    <color rgba="0.2 0.2 0.2 1.0"/>
+  </material>
+
+  <!-- ========================================================================
+       Wheel Macro (휠 매크로)
+       ======================================================================== -->
+  <xacro:macro name="wheel" params="prefix x_pos y_pos">
+    <link name="${prefix}_wheel_link">
+      <visual>
+        <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+        <geometry>
+          <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+        </geometry>
+        <material name="dark_gray"/>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+        <geometry>
+          <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <mass value="0.5"/>
+        <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+        <inertia
+          ixx="0.00052" ixy="0" ixz="0"
+          iyy="0.00052" iyz="0"
+          izz="0.00063"/>
+      </inertial>
+    </link>
+    
+    <joint name="${prefix}_wheel_joint" type="continuous">
+      <parent link="base_link"/>
+      <child link="${prefix}_wheel_link"/>
+      <origin xyz="${x_pos} ${y_pos} 0" rpy="0 0 0"/>
+      <axis xyz="0 1 0"/>
+      <dynamics damping="0.1" friction="0.1"/>
+    </joint>
+  </xacro:macro>
+
+  <!-- ========================================================================
+       Base Link (로봇 몸체)
+       ======================================================================== -->
+  <link name="base_link">
+    <visual>
+      <origin xyz="0 0 ${wheel_radius + 0.02}" rpy="0 0 0"/>
+      <geometry>
+        <box size="${wheelbase * 0.8} ${wheel_separation * 0.7} 0.08"/>
+      </geometry>
+      <material name="blue"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 ${wheel_radius + 0.02}" rpy="0 0 0"/>
+      <geometry>
+        <box size="${wheelbase * 0.8} ${wheel_separation * 0.7} 0.08"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="5.0"/>
+      <origin xyz="0 0 ${wheel_radius + 0.02}" rpy="0 0 0"/>
+      <inertia
+        ixx="0.05" ixy="0" ixz="0"
+        iyy="0.05" iyz="0"
+        izz="0.1"/>
+    </inertial>
+  </link>
+
+  <!-- ========================================================================
+       Footprint Link (오도메트리 기준점)
+       ======================================================================== -->
+  <link name="base_footprint"/>
+  
+  <joint name="base_footprint_joint" type="fixed">
+    <parent link="base_footprint"/>
+    <child link="base_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+
+  <!-- ========================================================================
+       Wheel Links (4개의 휠)
+       ======================================================================== 
+       
+       휠 배치 (위에서 본 모습):
+       
+              Front
+         FL ─────── FR
+          │         │
+          │ (base)  │
+          │         │
+         RL ─────── RR
+              Rear
+       
+       조인트 순서 (ros2_control에서 사용):
+       [0] front_left_wheel_joint
+       [1] front_right_wheel_joint  
+       [2] rear_left_wheel_joint
+       [3] rear_right_wheel_joint
+       ======================================================================== -->
+  
+  <!-- Front Left Wheel -->
+  <xacro:wheel prefix="front_left" 
+               x_pos="${wheelbase/2}" 
+               y_pos="${wheel_separation/2 + wheel_width/2}"/>
+  
+  <!-- Front Right Wheel -->
+  <xacro:wheel prefix="front_right" 
+               x_pos="${wheelbase/2}" 
+               y_pos="${-wheel_separation/2 - wheel_width/2}"/>
+  
+  <!-- Rear Left Wheel -->
+  <xacro:wheel prefix="rear_left" 
+               x_pos="${-wheelbase/2}" 
+               y_pos="${wheel_separation/2 + wheel_width/2}"/>
+  
+  <!-- Rear Right Wheel -->
+  <xacro:wheel prefix="rear_right" 
+               x_pos="${-wheelbase/2}" 
+               y_pos="${-wheel_separation/2 - wheel_width/2}"/>
+
+  <!-- ========================================================================
+       ros2_control Hardware Interface
+       ========================================================================
+       
+       MD4WDHardware 플러그인 사용
+       - 2개의 MD 듀얼채널 드라이버로 4개의 모터 제어
+       - Front Driver (ID=1): FL, FR
+       - Rear Driver (ID=2): RL, RR
+       
+       파라미터는 xacro arg를 통해 전달됨 (YAML → Launch → URDF)
+       
+       중요: 조인트 순서가 코드의 인덱스와 일치해야 함!
+       [0] front_left_wheel_joint   - Front Driver CH1
+       [1] front_right_wheel_joint  - Front Driver CH2
+       [2] rear_left_wheel_joint    - Rear Driver CH1
+       [3] rear_right_wheel_joint   - Rear Driver CH2
+       ======================================================================== -->
+  <ros2_control name="md_4wd_hardware_interface" type="system">
+    <hardware>
+      <plugin>md_hardware/MD4WDHardware</plugin>
+      <!-- 시리얼 통신 파라미터 -->
+      <param name="port">$(arg port)</param>
+      <param name="baudrate">$(arg baudrate)</param>
+      <!-- 모터 드라이버 ID -->
+      <param name="front_driver_id">$(arg front_driver_id)</param>
+      <param name="rear_driver_id">$(arg rear_driver_id)</param>
+      <param name="id_mdui">$(arg id_mdui)</param>
+      <param name="id_mdt">$(arg id_mdt)</param>
+      <!-- 로봇 기구학 파라미터 -->
+      <param name="wheel_radius">$(arg wheel_radius)</param>
+      <param name="wheel_separation">$(arg wheel_separation)</param>
+      <param name="wheelbase">$(arg wheelbase)</param>
+      <param name="gear_ratio">$(arg gear_ratio)</param>
+      <param name="poles">$(arg poles)</param>
+    </hardware>
+    
+    <!-- 조인트 정의 (순서 중요!) -->
+    <!-- [0] Front Left -->
+    <joint name="front_left_wheel_joint">
+      <command_interface name="velocity">
+        <param name="min">-50.0</param>
+        <param name="max">50.0</param>
+      </command_interface>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    
+    <!-- [1] Front Right -->
+    <joint name="front_right_wheel_joint">
+      <command_interface name="velocity">
+        <param name="min">-50.0</param>
+        <param name="max">50.0</param>
+      </command_interface>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    
+    <!-- [2] Rear Left -->
+    <joint name="rear_left_wheel_joint">
+      <command_interface name="velocity">
+        <param name="min">-50.0</param>
+        <param name="max">50.0</param>
+      </command_interface>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    
+    <!-- [3] Rear Right -->
+    <joint name="rear_right_wheel_joint">
+      <command_interface name="velocity">
+        <param name="min">-50.0</param>
+        <param name="max">50.0</param>
+      </command_interface>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+  </ros2_control>
+
+</robot>

@@ -1,0 +1,150 @@
+# ============================================================================
+# MD Motor 4WD Controller Configuration
+# ============================================================================
+#
+# 4륜 스키드 스티어 로봇용 컨트롤러 설정
+# diff_drive_controller를 사용하여 4개의 휠을 제어
+#
+# [휠 구성]
+# - 왼쪽 휠들: front_left, rear_left
+# - 오른쪽 휠들: front_right, rear_right
+#
+# [중요] wheel_radius, wheel_separation은 md_4wd_hardware.yaml과 일치시켜야 함!
+#
+# ============================================================================
+
+# Controller Manager 설정
+controller_manager:
+  ros__parameters:
+    update_rate: 50  # Hz (20ms 주기)
+    
+    # 사용할 컨트롤러 목록
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    diff_drive_controller:
+      type: diff_drive_controller/DiffDriveController
+
+# Joint State Broadcaster 설정
+# - 모든 조인트의 상태(position, velocity)를 /joint_states 토픽으로 발행
+joint_state_broadcaster:
+  ros__parameters:
+    # 발행할 조인트 이름 (생략 시 모든 조인트)
+    joints: []
+    # 추가 인터페이스 (effort 등)
+    extra_joints: []
+
+# Diff Drive Controller 설정
+# - /cmd_vel 토픽을 구독하여 4개의 휠을 제어
+# - /odom 토픽으로 오도메트리 발행
+diff_drive_controller:
+  ros__parameters:
+    # ================================================================
+    # 휠 설정 (4WD 스키드 스티어)
+    # ================================================================
+    
+    # 왼쪽 휠 조인트 이름들 (앞, 뒤 순서)
+    left_wheel_names:
+      - front_left_wheel_joint
+      - rear_left_wheel_joint
+    
+    # 오른쪽 휠 조인트 이름들 (앞, 뒤 순서)
+    right_wheel_names:
+      - front_right_wheel_joint
+      - rear_right_wheel_joint
+    
+    # 한 쪽당 휠 개수 (4WD = 2, 2WD = 1)
+    wheels_per_side: 2
+
+    # ================================================================
+    # 로봇 기구학 파라미터
+    # [중요] md_4wd_hardware.yaml과 동일하게 설정!
+    # ================================================================
+    
+    # 좌우 휠 간 거리 (m) - md_4wd_hardware.yaml의 wheel_separation과 동일
+    wheel_separation: 0.3
+    
+    # 휠 반지름 (m) - md_4wd_hardware.yaml의 wheel_radius와 동일
+    wheel_radius: 0.05
+    
+    # 휠 관련 보정값
+    wheel_separation_multiplier: 1.0
+    left_wheel_radius_multiplier: 1.0
+    right_wheel_radius_multiplier: 1.0
+
+    # ================================================================
+    # TF 프레임 설정
+    # ================================================================
+    
+    # 오도메트리 프레임 이름
+    odom_frame_id: odom
+    
+    # 베이스 프레임 이름
+    base_frame_id: base_footprint
+    
+    # 위치 업데이트 방식: open_loop(엔코더 없이) / closed_loop(엔코더 사용)
+    pose_covariance_diagonal: [0.001, 0.001, 0.001, 0.001, 0.001, 0.01]
+    twist_covariance_diagonal: [0.001, 0.001, 0.001, 0.001, 0.001, 0.01]
+    
+    # Open Loop 모드 설정 (false = 엔코더 피드백 사용)
+    open_loop: false
+    
+    # TF 발행 설정
+    enable_odom_tf: true
+
+    # ================================================================
+    # 명령 속도 제한
+    # ================================================================
+    
+    # 참고: 실제 토픽 이름은 use_stamped_vel 설정에 따라 결정됨
+    # use_stamped_vel: false → /diff_drive_controller/cmd_vel_unstamped (Twist)
+    # use_stamped_vel: true  → /diff_drive_controller/cmd_vel (TwistStamped)
+    
+    # 최대 선속도 (m/s)
+    linear.x.has_velocity_limits: true
+    linear.x.has_acceleration_limits: true
+    linear.x.has_jerk_limits: false
+    linear.x.max_velocity: 1.0
+    linear.x.min_velocity: -1.0
+    linear.x.max_acceleration: 0.5
+    linear.x.min_acceleration: -0.5
+    
+    # 최대 각속도 (rad/s)
+    angular.z.has_velocity_limits: true
+    angular.z.has_acceleration_limits: true
+    angular.z.has_jerk_limits: false
+    angular.z.max_velocity: 2.0
+    angular.z.min_velocity: -2.0
+    angular.z.max_acceleration: 1.0
+    angular.z.min_acceleration: -1.0
+
+    # ================================================================
+    # 타임아웃 설정
+    # ================================================================
+    
+    # cmd_vel 메시지 타임아웃 (초) - 이 시간 동안 메시지가 없으면 모터 정지
+    cmd_vel_timeout: 0.5
+    
+    # 오도메트리 발행 주기
+    publish_rate: 50.0
+    
+    # 제한된 속도 발행 여부
+    publish_limited_velocity: true
+    
+    # 휠 속도를 발행할지 여부
+    publish_wheel_data: true
+    
+    # Stamped 메시지 사용 여부
+    # false: /diff_drive_controller/cmd_vel_unstamped (geometry_msgs/Twist) 구독
+    # true:  /diff_drive_controller/cmd_vel (geometry_msgs/TwistStamped) 구독
+    use_stamped_vel: false
+
+    # ================================================================
+    # 추가 설정
+    # ================================================================
+    
+    # 속도 롤링 윈도우 크기 (평균 계산용)
+    velocity_rolling_window_size: 10
+    
+    # preserve_turning_radius: 회전 반경 유지
+    preserve_turning_radius: true
